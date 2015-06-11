@@ -7,7 +7,11 @@
 |----------------------------------------------------------------------------*/
 #pragma once
 #include "constraint.h"
+
+#ifdef DEBUG
 #include "debug.h"
+#endif
+
 #include "solverimpl.h"
 #include "strength.h"
 #include "variable.h"
@@ -145,11 +149,12 @@ public:
 	/* Dump a representation of the solver internals to stdout.
 
 	*/
+#ifdef DEBUG
 	void dump()
 	{
 		debug::dump( m_impl );
 	}
-
+#endif
 private:
 
 	Solver( const Solver& );
