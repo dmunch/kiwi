@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectTypeGuids>{EFBA0AD7-5A72-4C68-AF49-83D382785DCF};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <ProjectGuid>{C7D00BD4-7805-4692-9D53-BC6D4C5C9AB4}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>kiwi.net.droid</RootNamespace>
+    <MonoAndroidAssetsPrefix>Assets</MonoAndroidAssetsPrefix>
+    <MonoAndroidResourcePrefix>Resources</MonoAndroidResourcePrefix>
+    <AndroidUseLatestPlatformSdk>False</AndroidUseLatestPlatformSdk>
+    <AssemblyName>kiwi.net.droid</AssemblyName>
+    <TargetFrameworkVersion>v4.0.3</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AndroidUseSharedRuntime>false</AndroidUseSharedRuntime>
+    <ConsolePause>false</ConsolePause>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Core" />
+    <Reference Include="Mono.Android" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="${DOS_STYLE_BINARY_DIR}\*.cs">
+    </Compile>
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath)\Novell\Novell.MonoDroid.CSharp.targets" />
+  <ItemGroup>
+    <Folder Include="Resources\lib\" />
+    <Folder Include="Resources\lib\x86\" />
+    <Folder Include="Resources\lib\armeabi\" />
+    <Folder Include="Resources\lib\armeabi-v7a\" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedNativeLibrary Include="${DOS_STYLE_BINARY_DIR}\..\x86\libkiwi.so" >
+    	<Link>Resources\lib\x86\libkiwi.so"</Link>
+    </EmbeddedNativeLibrary>
+    <EmbeddedNativeLibrary Include="${DOS_STYLE_BINARY_DIR}\..\armeabi\libkiwi.so" >
+    	<Link>Resources\lib\armeabi\libkiwi.so"</Link>
+    </EmbeddedNativeLibrary>
+    <EmbeddedNativeLibrary Include="${DOS_STYLE_BINARY_DIR}\..\armeabi-v7a\libkiwi.so" >
+    	<Link>Resources\lib\armeabi-v7a\libkiwi.so"</Link>
+    </EmbeddedNativeLibrary>
+  </ItemGroup>
+</Project>
