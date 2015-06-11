@@ -35,3 +35,5 @@ f_cmake "armeabi-v7a" "armeabi-v7a with NEON"
 # Run it against one of the generated csproj files, they're all the same.
 
 xbuild /p:Configuration=Release x86/kiwi.net.droid.csproj /p:OutputPath=..
+cp $SRC_DIR_ABSOLUTE/csharp/kiwi.net.droid.nuspec .
+nuget pack kiwi.net.droid.nuspec

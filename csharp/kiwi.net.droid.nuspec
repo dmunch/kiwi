@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+    <metadata>
+        <id>kiwi.net.droid</id>
+        <version>1.0.0</version>
+        <authors>Daniel Münch, S. Chris Colbert and the Nucleic team</authors>
+        <licenseUrl>https://github.com/dmunch/kiwi/blob/master/COPYING.txt</licenseUrl>
+        <projectUrl>https://github.com/dmunch/kiwi</projectUrl>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>P/Invoke wrappers around the optimized Kiwi C++ implementation of the Cassowary linear constraint solver for MonoDroid. </description>
+        <summary>
+		Kiwi is an efficient C++ implementation of the Cassowary constraint solving algorithm. Kiwi is an implementation of the algorithm based on the seminal Cassowary paper. It is not a refactoring of the original C++ solver. Kiwi has been designed from the ground up to be lightweight and fast. Kiwi ranges from 10x to 500x faster than the original Cassowary solver with typical use cases gaining a 40x improvement. Memory savings are consistently > 5x. 
+	 </summary>
+        <tags>kiwi linear constraints cassowary autolayout</tags>
+    </metadata>
+    <files>
+        <file src="kiwi.net.droid.dll" target="lib/monoandroid" />
+    </files>
+</package>
