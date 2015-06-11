@@ -40,9 +40,9 @@ public:
 		The given constraint is required and cannot be satisfied.
 
 	*/
-	void addConstraint( const Constraint& constraint )
+	ExceptionCode addConstraint( const Constraint& constraint )
 	{
-		m_impl.addConstraint( constraint );
+		return m_impl.addConstraint( constraint );
 	}
 
 	/* Remove a constraint from the solver.
@@ -53,9 +53,9 @@ public:
 		The given constraint has not been added to the solver.
 
 	*/
-	void removeConstraint( const Constraint& constraint )
+	ExceptionCode removeConstraint( const Constraint& constraint )
 	{
-		m_impl.removeConstraint( constraint );
+		return m_impl.removeConstraint( constraint );
 	}
 
 	/* Test whether a constraint has been added to the solver.
@@ -80,9 +80,9 @@ public:
 		The given strength is >= required.
 
 	*/
-	void addEditVariable( const Variable& variable, double strength )
+	ExceptionCode addEditVariable( const Variable& variable, double strength )
 	{
-		m_impl.addEditVariable( variable, strength );
+		return m_impl.addEditVariable( variable, strength );
 	}
 
 	/* Remove an edit variable from the solver.
@@ -93,9 +93,9 @@ public:
 		The given edit variable has not been added to the solver.
 
 	*/
-	void removeEditVariable( const Variable& variable )
+	ExceptionCode removeEditVariable( const Variable& variable )
 	{
-		m_impl.removeEditVariable( variable );
+		return m_impl.removeEditVariable( variable );
 	}
 
 	/* Test whether an edit variable has been added to the solver.
@@ -119,9 +119,9 @@ public:
 		The given edit variable has not been added to the solver.
 
 	*/
-	void suggestValue( const Variable& variable, double value )
+	ExceptionCode suggestValue( const Variable& variable, double value )
 	{
-		m_impl.suggestValue( variable, value );
+		return m_impl.suggestValue( variable, value );
 	}
 
 	/* Update the values of the external solver variables.

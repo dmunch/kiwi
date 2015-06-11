@@ -11,7 +11,7 @@
 #include <memory>
 #include <vector>
 #include "constraint.h"
-#include "errors.h"
+//#include "errors.h"
 #include "expression.h"
 #include "maptype.h"
 #include "row.h"
@@ -23,6 +23,20 @@
 
 namespace kiwi
 {
+
+enum ExceptionCode 
+{
+	None,
+	DuplicateConstraint,
+	UnsatisfiableConstraint,
+	UnknownConstraint,
+	DuplicateEditVariable,
+	BadRequiredStrength,
+	UnknownEditVariable,
+	InternalSolverErrorObjectiveUnbounded,
+	InternalSolverErrorDualOptimizedFailed,
+	InternalSolverErrorFailedToFindLeavingRow,
+};
 
 namespace impl
 {
@@ -51,14 +65,6 @@ class SolverImpl
 	typedef MapType<Constraint, Tag>::Type CnMap;
 
 	typedef MapType<Variable, EditInfo>::Type EditMap;
-
-	struct DualOptimizeGuard
-	{
-		DualOptimizeGuard( SolverImpl& impl ) : m_impl( impl ) {}
-		~DualOptimizeGuard() { m_impl.dualOptimize(); }
-		SolverImpl& m_impl;
-	};
-
 public:
 
 	SolverImpl() : m_objective( new Row() ), m_id_tick( 1 ) {}
@@ -76,10 +82,10 @@ public:
 		The given constraint is required and cannot be satisfied.
 
 	*/
-	void addConstraint( const Constraint& constraint )
+	ExceptionCode addConstraint( const Constraint& constraint )
 	{
 		if( m_cns.find( constraint ) != m_cns.end() )
-			throw DuplicateConstraint( constraint );
+			return DuplicateConstraint;
 
 		// Creating a row causes symbols to reserved for the variables
 		// in the constraint. If this method exits with an exception,
@@ -100,7 +106,7 @@ public:
 		if( subject.type() == Symbol::Invalid && allDummies( *rowptr ) )
 		{
 			if( !nearZero( rowptr->constant() ) )
-				throw UnsatisfiableConstraint( constraint );
+				return UnsatisfiableConstraint;
 			else
 				subject = tag.marker;
 		}
@@ -111,7 +117,7 @@ public:
 		if( subject.type() == Symbol::Invalid )
 		{
 			if( !addWithArtificialVariable( *rowptr ) )
-				throw UnsatisfiableConstraint( constraint );
+				return UnsatisfiableConstraint;
 		}
 		else
 		{
@@ -125,7 +131,7 @@ public:
 		// Optimizing after each constraint is added performs less
 		// aggregate work due to a smaller average system size. It
 		// also ensures the solver remains in a consistent state.
-		optimize( *m_objective );
+		return optimize( *m_objective );
 	}
 
 	/* Remove a constraint from the solver.
@@ -136,11 +142,11 @@ public:
 		The given constraint has not been added to the solver.
 
 	*/
-	void removeConstraint( const Constraint& constraint )
+	ExceptionCode removeConstraint( const Constraint& constraint )
 	{
 		CnMap::iterator cn_it = m_cns.find( constraint );
 		if( cn_it == m_cns.end() )
-			throw UnknownConstraint( constraint );
+			return UnknownConstraint;
 
 		Tag tag( cn_it->second );
 		m_cns.erase( cn_it );
@@ -162,7 +168,7 @@ public:
 		{
 			row_it = getMarkerLeavingRow( tag.marker );
 			if( row_it == m_rows.end() )
-				throw InternalSolverError( "failed to find leaving row" );
+				return InternalSolverErrorFailedToFindLeavingRow;
 			Symbol leaving( row_it->first );
 			std::auto_ptr<Row> rowptr( row_it->second );
 			m_rows.erase( row_it );
@@ -173,7 +179,7 @@ public:
 		// Optimizing after each constraint is removed ensures that the
 		// solver remains consistent. It makes the solver api easier to
 		// use at a small tradeoff for speed.
-		optimize( *m_objective );
+		return optimize( *m_objective );
 	}
 
 	/* Test whether a constraint has been added to the solver.
@@ -198,13 +204,13 @@ public:
 		The given strength is >= required.
 
 	*/
-	void addEditVariable( const Variable& variable, double strength )
+	ExceptionCode addEditVariable( const Variable& variable, double strength )
 	{
 		if( m_edits.find( variable ) != m_edits.end() )
-			throw DuplicateEditVariable( variable );
+			return DuplicateEditVariable;
 		strength = strength::clip( strength );
 		if( strength == strength::required )
-			throw BadRequiredStrength();
+			return BadRequiredStrength;
 		Constraint cn( Expression( variable ), OP_EQ, strength );
 		addConstraint( cn );
 		EditInfo info;
@@ -212,6 +218,8 @@ public:
 		info.constraint = cn;
 		info.constant = 0.0;
 		m_edits[ variable ] = info;
+
+		return None;
 	}
 
 	/* Remove an edit variable from the solver.
@@ -222,13 +230,15 @@ public:
 		The given edit variable has not been added to the solver.
 
 	*/
-	void removeEditVariable( const Variable& variable )
+	ExceptionCode removeEditVariable( const Variable& variable )
 	{
 		EditMap::iterator it = m_edits.find( variable );
 		if( it == m_edits.end() )
-			throw UnknownEditVariable( variable );
+			return UnknownEditVariable;
 		removeConstraint( it->second.constraint );
 		m_edits.erase( it );
+
+		return None;
 	}
 
 	/* Test whether an edit variable has been added to the solver.
@@ -250,13 +260,12 @@ public:
 		The given edit variable has not been added to the solver.
 
 	*/
-	void suggestValue( const Variable& variable, double value )
+	ExceptionCode suggestValue( const Variable& variable, double value )
 	{
 		EditMap::iterator it = m_edits.find( variable );
 		if( it == m_edits.end() )
-			throw UnknownEditVariable( variable );
+			return UnknownEditVariable;
 
-		DualOptimizeGuard guard( *this );
 		EditInfo& info = it->second;
 		double delta = value - info.constant;
 		info.constant = value;
@@ -267,7 +276,7 @@ public:
 		{
 			if( row_it->second->add( -delta ) < 0.0 )
 				m_infeasible_rows.push_back( row_it->first );
-			return;
+			return dualOptimize();
 		}
 
 		// Check next if the negative error variable is basic.
@@ -276,7 +285,7 @@ public:
 		{
 			if( row_it->second->add( delta ) < 0.0 )
 				m_infeasible_rows.push_back( row_it->first );
-			return;
+			return dualOptimize();
 		}
 
 		// Otherwise update each row where the error variables exist.
@@ -289,6 +298,7 @@ public:
 				row_it->first.type() != Symbol::External )
 				m_infeasible_rows.push_back( row_it->first );
 		}
+		return dualOptimize();
 	}
 
 	/* Update the values of the external solver variables.
@@ -564,16 +574,16 @@ private:
 		The value of the objective function is unbounded.
 
 	*/
-	void optimize( const Row& objective )
+	ExceptionCode optimize( const Row& objective )
 	{
 		while( true )
 		{
 			Symbol entering( getEnteringSymbol( objective ) );
 			if( entering.type() == Symbol::Invalid )
-				return;
+				return None;
 			RowMap::iterator it = getLeavingRow( entering );
 			if( it == m_rows.end() )
-				throw InternalSolverError( "The objective is unbounded." );
+				return InternalSolverErrorObjectiveUnbounded;
 			// pivot the entering symbol into the basis
 			Symbol leaving( it->first );
 			Row* row = it->second;
@@ -597,7 +607,7 @@ private:
 		The system cannot be dual optimized.
 
 	*/
-	void dualOptimize()
+	ExceptionCode dualOptimize()
 	{
 		while( !m_infeasible_rows.empty() )
 		{
@@ -609,7 +619,7 @@ private:
 			{
 				Symbol entering( getDualEnteringSymbol( *it->second ) );
 				if( entering.type() == Symbol::Invalid )
-					throw InternalSolverError( "Dual optimize failed." );
+					return InternalSolverErrorDualOptimizedFailed;
 				// pivot the entering symbol into the basis
 				Row* row = it->second;
 				m_rows.erase( it );
@@ -618,6 +628,7 @@ private:
 				m_rows[ entering ] = row;
 			}
 		}
+		return None;
 	}
 
 	/* Compute the entering variable for a pivot operation.
